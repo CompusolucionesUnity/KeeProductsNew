@@ -1,9 +1,9 @@
-const cacheName = "F2M-KeeSafety_Walk-0.1.0";
+const cacheName = "F2M-KeeSafety_VirtualShowroom-0.1.0";
 const contentToCache = [
-    "Build/Kee Products New.loader.js",
-    "Build/Kee Products New.framework.js",
-    "Build/Kee Products New.data",
-    "Build/Kee Products New.wasm",
+    "Build/KeeSafety_VirtualShowroom.loader.js",
+    "Build/KeeSafety_VirtualShowroom.framework.js",
+    "Build/KeeSafety_VirtualShowroom.data",
+    "Build/KeeSafety_VirtualShowroom.wasm",
     "TemplateData/style.css"
 
 ];

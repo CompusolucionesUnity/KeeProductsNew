@@ -1,6 +1,6 @@
 {
-    "name": "KeeSafety_Walk",
-    "short_name": "KeeSafety_Walk",
+    "name": "KeeSafety_VirtualShowroom",
+    "short_name": "KeeSafety_VirtualShowroom",
     "start_url": "index.html",
     "display": "fullscreen",
     "background_color": "#231F20",
