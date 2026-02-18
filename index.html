@@ -1,61 +1,69 @@
 <!DOCTYPE html>
-<html lang="en-us">
+<html lang="es-ES">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Unity Web Player | KeeSafety_VirtualShowroom</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
     <link rel="manifest" href="manifest.webmanifest">
-</head>
+    <style>
+        /* Pantalla de bloqueo para iOS */
+        #ios-redirect {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            color: white;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
 
-<body>
-    <!-- Pantalla alternativa SOLO para iOS -->
-    <div id="ios-redirect"
-         style="
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #0f172a;
-        color: white;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-family: Arial, sans-serif;
-      ">
-        <div>
-            <h1>Este showroom no es compatible con iPhone</h1>
-            <p>
-                Para una mejor experiencia, visita nuestra versión optimizada.
-            </p>
+        .card {
+            max-width: 400px;
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+        }
 
-            <a href="https://compusolucionesunity.github.io/Kee-Dome/"
-               style="
+        .btn-redirect {
             display: inline-block;
-            margin-top: 20px;
-            padding: 14px 24px;
+            margin-top: 24px;
+            padding: 14px 28px;
             background: #38bdf8;
-            color: #000;
+            color: #0f172a;
             font-weight: bold;
             text-decoration: none;
             border-radius: 8px;
-          ">
-                Ir a la versión compatible
+            transition: background 0.2s;
+        }
+
+            .btn-redirect:hover {
+                background: #7dd3fc;
+            }
+    </style>
+</head>
+
+<body>
+    <div id="ios-redirect">
+        <div class="card">
+            <h1 style="font-size: 24px;">Dispositivo no compatible</h1>
+            <p style="color: #cbd5e1; line-height: 1.6;">
+                Este showroom está optimizado para computadoras. Para tu dispositivo Apple, hemos creado una versión ligera.
+            </p>
+            <a href="https://compusolucionesunity.github.io/Kee-Dome/" class="btn-redirect">
+                Ir a la versión móvil
             </a>
         </div>
     </div>
 
-    <!-- Contenedor Unity -->
-    <div id="unity-container">
-        <canvas id="unity-canvas"
-                width="1920"
-                height="1080"
-                tabindex="-1"></canvas>
+    <div id="unity-container" class="unity-desktop">
+        <canvas id="unity-canvas" width="1920" height="1080" tabindex="-1"></canvas>
         <div id="unity-loading-bar">
             <div id="unity-logo"></div>
             <div id="unity-progress-bar-empty">
@@ -66,74 +74,95 @@
     </div>
 
     <script>
-        // Detección REAL de iOS (evita falsos positivos en macOS)
-        const isIOS =
-            /iPhone|iPad|iPod/i.test(navigator.userAgent) &&
-            "ontouchstart" in window;
+        /**
+         * DETECCIÓN MEJORADA
+         * Bloquea solo iOS/iPadOS y permite Windows, Android y macOS Desktop.
+         */
+        function checkIsMobileApple() {
+            const ua = navigator.userAgent;
+            const platform = navigator.platform || '';
 
-        if (isIOS) {
-            // Bloquear Unity y mostrar pantalla alternativa
-            document.getElementById("unity-container").style.display = "none";
-            document.getElementById("ios-redirect").style.display = "flex";
+            // 1. Forzar 'false' si es Windows (evita falsos positivos en laptops con touch)
+            if (platform.includes('Win')) return false;
+
+            // 2. Detectar iPhone/iPod
+            const isIPhone = /iPhone|iPod/.test(ua);
+
+            // 3. Detectar iPad (incluyendo iPadOS que se hace pasar por Mac)
+            const isIPad = /iPad/.test(ua) ||
+                (platform.includes('Mac') && navigator.maxTouchPoints > 1);
+
+            return isIPhone || isIPad;
+        }
+
+        const isAppleMobile = checkIsMobileApple();
+        const unityContainer = document.querySelector("#unity-container");
+        const iosRedirect = document.querySelector("#ios-redirect");
+
+        if (isAppleMobile) {
+            // Bloqueo total para iOS
+            unityContainer.remove(); // Eliminamos el contenedor para ahorrar recursos
+            iosRedirect.style.display = "flex";
         } else {
-            // Cargar Unity SOLO si NO es iOS
-            window.addEventListener("load", function () {
-                if ("serviceWorker" in navigator) {
-                    navigator.serviceWorker.register("ServiceWorker.js");
+            // Carga normal para el resto (Windows, Mac, Android, etc.)
+            initUnityApp();
+        }
+
+        function initUnityApp() {
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker.register("ServiceWorker.js");
+            }
+
+            const canvas = document.querySelector("#unity-canvas");
+            const loadingBar = document.querySelector("#unity-loading-bar");
+            const progressBarFull = document.querySelector("#unity-progress-bar-full");
+            const warningBanner = document.querySelector("#unity-warning");
+
+            function unityShowBanner(msg, type) {
+                function updateBannerVisibility() {
+                    warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
                 }
-
-                var canvas = document.querySelector("#unity-canvas");
-                var loadingBar = document.querySelector("#unity-loading-bar");
-                var progressBarFull = document.querySelector(
-                    "#unity-progress-bar-full"
-                );
-                var warningBanner = document.querySelector("#unity-warning");
-
-                function unityShowBanner(msg, type) {
-                    var div = document.createElement("div");
-                    div.innerHTML = msg;
-                    warningBanner.appendChild(div);
-                    if (type === "error") {
-                        div.style = "background:red;padding:10px;";
-                    } else if (type === "warning") {
-                        div.style = "background:yellow;padding:10px;";
-                        setTimeout(() => {
-                            warningBanner.removeChild(div);
-                        }, 5000);
-                    }
+                var div = document.createElement('div');
+                div.innerHTML = msg;
+                warningBanner.appendChild(div);
+                if (type == 'error') div.style = 'background:red; padding: 10px;';
+                else {
+                    if (type == 'warning') div.style = 'background:yellow; padding: 10px;';
+                    setTimeout(function () {
+                        warningBanner.removeChild(div);
+                        updateBannerVisibility();
+                    }, 5000);
                 }
+                updateBannerVisibility();
+            }
 
-                var buildUrl = "Build";
-                var loaderUrl =
-                    buildUrl + "/KeeSafety_VirtualShowroom.loader.js";
-                var config = {
-                    dataUrl:
-                        buildUrl + "/KeeSafety_VirtualShowroom.data",
-                    frameworkUrl:
-                        buildUrl + "/KeeSafety_VirtualShowroom.framework.js",
-                    codeUrl:
-                        buildUrl + "/KeeSafety_VirtualShowroom.wasm",
-                    streamingAssetsUrl: "StreamingAssets",
-                    companyName: "F2M",
-                    productName: "KeeSafety_VirtualShowroom",
-                    productVersion: "0.1.0",
-                    showBanner: unityShowBanner,
-                };
+            const buildUrl = "Build";
+            const loaderUrl = buildUrl + "/KeeSafety_VirtualShowroom.loader.js";
+            const config = {
+                dataUrl: buildUrl + "/KeeSafety_VirtualShowroom.data",
+                frameworkUrl: buildUrl + "/KeeSafety_VirtualShowroom.framework.js",
+                codeUrl: buildUrl + "/KeeSafety_VirtualShowroom.wasm",
+                streamingAssetsUrl: "StreamingAssets",
+                companyName: "F2M",
+                productName: "KeeSafety_VirtualShowroom",
+                productVersion: "0.1.0",
+                showBanner: unityShowBanner,
+            };
 
-                loadingBar.style.display = "block";
+            loadingBar.style.display = "block";
 
-                var script = document.createElement("script");
-                script.src = loaderUrl;
-                script.onload = () => {
-                    createUnityInstance(canvas, config, (progress) => {
-                        progressBarFull.style.width =
-                            100 * progress + "%";
-                    }).then(() => {
-                        loadingBar.style.display = "none";
-                    });
-                };
-                document.body.appendChild(script);
-            });
+            const script = document.createElement("script");
+            script.src = loaderUrl;
+            script.onload = () => {
+                createUnityInstance(canvas, config, (progress) => {
+                    progressBarFull.style.width = 100 * progress + "%";
+                }).then((unityInstance) => {
+                    loadingBar.style.display = "none";
+                }).catch((message) => {
+                    alert(message);
+                });
+            };
+            document.body.appendChild(script);
         }
     </script>
 </body>
